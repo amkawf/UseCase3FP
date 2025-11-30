@@ -1,8 +1,7 @@
 package pam.mobile.usecase3fp.ui
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
@@ -11,6 +10,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -24,7 +24,6 @@ fun GoalsScreen(
     viewModel: GoalsViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val scrollState = rememberScrollState()
 
     // Show snackbar when saved
     LaunchedEffect(uiState.isSaved) {
@@ -53,103 +52,109 @@ fun GoalsScreen(
             )
         )
 
-        Column(
+        // LazyColumn untuk konten scrollable
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(scrollState)
                 .padding(horizontal = 20.dp)
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
-
             // Title
-            Text(
-                text = "Daily Goal",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.align(Alignment.CenterHorizontally)
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // Kalori
-            NutrientSlider(
-                label = "Kalori",
-                value = uiState.kcal,
-                unit = "kcal",
-                color = Color(0xFF03A9F4),
-                minValue = 500,
-                maxValue = 5000,
-                onValueChange = { viewModel.updateKcal(it) }
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // Protein
-            NutrientSlider(
-                label = "Protein",
-                value = uiState.protein,
-                unit = "g",
-                color = Color(0xFF4CAF50),
-                minValue = 0,
-                maxValue = 500,
-                onValueChange = { viewModel.updateProtein(it) }
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // Karbohidrat
-            NutrientSlider(
-                label = "Karbohidrat",
-                value = uiState.carbs,
-                unit = "g",
-                color = Color(0xFFFF9800),
-                minValue = 0,
-                maxValue = 1000,
-                onValueChange = { viewModel.updateCarbs(it) }
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // Lemak
-            NutrientSlider(
-                label = "lemak",
-                value = uiState.fat,
-                unit = "g",
-                color = Color(0xFF9C27B0),
-                minValue = 0,
-                maxValue = 300,
-                onValueChange = { viewModel.updateFat(it) }
-            )
-
-            Spacer(modifier = Modifier.height(48.dp))
-
-            // Terapkan button
-            Button(
-                onClick = { viewModel.saveTargets() },
-                enabled = !uiState.isSaving,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF03A9F4)
-                ),
-                shape = MaterialTheme.shapes.medium
-            ) {
-                if (uiState.isSaving) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = Color.White
-                    )
-                } else {
-                    Text(
-                        text = "Terapkan",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "Daily Goal",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(32.dp))
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            // Kalori Slider
+            item {
+                NutrientSlider(
+                    label = "Kalori",
+                    value = uiState.kcal,
+                    unit = "kcal",
+                    color = Color(0xFF03A9F4),
+                    minValue = 500,
+                    maxValue = 5000,
+                    onValueChange = { viewModel.updateKcal(it) }
+                )
+                Spacer(modifier = Modifier.height(32.dp))
+            }
+
+            // Protein Slider
+            item {
+                NutrientSlider(
+                    label = "Protein",
+                    value = uiState.protein,
+                    unit = "g",
+                    color = Color(0xFF4CAF50),
+                    minValue = 0,
+                    maxValue = 500,
+                    onValueChange = { viewModel.updateProtein(it) }
+                )
+                Spacer(modifier = Modifier.height(32.dp))
+            }
+
+            // Karbohidrat Slider
+            item {
+                NutrientSlider(
+                    label = "Karbohidrat",
+                    value = uiState.carbs,
+                    unit = "g",
+                    color = Color(0xFFFF9800),
+                    minValue = 0,
+                    maxValue = 1000,
+                    onValueChange = { viewModel.updateCarbs(it) }
+                )
+                Spacer(modifier = Modifier.height(32.dp))
+            }
+
+            // Lemak Slider
+            item {
+                NutrientSlider(
+                    label = "lemak",
+                    value = uiState.fat,
+                    unit = "g",
+                    color = Color(0xFF9C27B0),
+                    minValue = 0,
+                    maxValue = 300,
+                    onValueChange = { viewModel.updateFat(it) }
+                )
+                Spacer(modifier = Modifier.height(48.dp))
+            }
+
+            // Terapkan Button
+            item {
+                Button(
+                    onClick = { viewModel.saveTargets() },
+                    enabled = !uiState.isSaving,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF03A9F4)
+                    ),
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    if (uiState.isSaving) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = Color.White
+                        )
+                    } else {
+                        Text(
+                            text = "Terapkan",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(32.dp))
+            }
         }
     }
 }
