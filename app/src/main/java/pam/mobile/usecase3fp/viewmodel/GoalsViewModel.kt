@@ -2,24 +2,26 @@ package pam.mobile.usecase3fp.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import pam.mobile.usecase3fp.model.DailyTargets
-import pam.mobile.usecase3fp.repository.FoodRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import pam.mobile.uiusecase3fp.model.DailyTargets
+import pam.mobile.uiusecase3fp.repository.SupabaseFoodRepository
 
 data class GoalsUiState(
     val kcal: Int = 2200,
     val protein: Int = 150,
     val carbs: Int = 250,
     val fat: Int = 75,
+    val isLoading: Boolean = false,
     val isSaving: Boolean = false,
-    val isSaved: Boolean = false
+    val isSaved: Boolean = false,
+    val error: String? = null
 )
 
 class GoalsViewModel(
-    private val repository: FoodRepository = FoodRepository.getInstance()
+    private val repository: SupabaseFoodRepository = SupabaseFoodRepository.getInstance()
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(GoalsUiState())
@@ -31,12 +33,21 @@ class GoalsViewModel(
 
     private fun loadCurrentTargets() {
         viewModelScope.launch {
-            repository.targets.collect { targets ->
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+
+            try {
+                val targets = repository.getDailyTargets()
                 _uiState.value = _uiState.value.copy(
                     kcal = targets.kcal,
                     protein = targets.protein,
                     carbs = targets.carbs,
-                    fat = targets.fat
+                    fat = targets.fat,
+                    isLoading = false
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = e.message ?: "Failed to load targets"
                 )
             }
         }
@@ -60,21 +71,28 @@ class GoalsViewModel(
 
     fun saveTargets() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isSaving = true)
+            _uiState.value = _uiState.value.copy(isSaving = true, error = null)
 
-            val newTargets = DailyTargets(
-                kcal = _uiState.value.kcal,
-                protein = _uiState.value.protein,
-                carbs = _uiState.value.carbs,
-                fat = _uiState.value.fat
-            )
+            try {
+                val newTargets = DailyTargets(
+                    kcal = _uiState.value.kcal,
+                    protein = _uiState.value.protein,
+                    carbs = _uiState.value.carbs,
+                    fat = _uiState.value.fat
+                )
 
-            repository.updateTargets(newTargets)
+                repository.updateDailyTargets(newTargets)
 
-            _uiState.value = _uiState.value.copy(
-                isSaving = false,
-                isSaved = true
-            )
+                _uiState.value = _uiState.value.copy(
+                    isSaving = false,
+                    isSaved = true
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isSaving = false,
+                    error = e.message ?: "Failed to save targets"
+                )
+            }
         }
     }
 

@@ -1,4 +1,4 @@
-package pam.mobile.usecase3fp.ui
+package pam.mobile.uiusecase3fp.ui
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -17,6 +17,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import pam.mobile.usecase3fp.viewmodel.GoalsViewModel
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GoalsScreen(
@@ -24,45 +25,54 @@ fun GoalsScreen(
     viewModel: GoalsViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    // Show snackbar when saved
+    // Trigger snackbar setelah penyimpanan berhasil
     LaunchedEffect(uiState.isSaved) {
         if (uiState.isSaved) {
+            snackbarHostState.showSnackbar("Target berhasil disimpan")
             viewModel.resetSavedState()
         }
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        // Top bar biru
-        TopAppBar(
-            title = { },
-            navigationIcon = {
-                IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(
-                        Icons.Default.ArrowBack,
-                        contentDescription = "Back",
-                        tint = Color.White
-                    )
-                }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = Color(0xFF03A9F4)
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Daily Goal", color = Color.White) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF03A9F4))
             )
-        )
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { padding ->
 
-        // LazyColumn untuk konten scrollable
+        // ---- Loading saat fetch awal ----
+        if (uiState.isLoading) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+            return@Scaffold
+        }
+
+        // ---- Konten utama ----
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(padding)
                 .padding(horizontal = 20.dp)
         ) {
-            // Title
+
             item {
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = "Daily Goal",
+                    text = "Daily Target Nutrisi",
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.fillMaxWidth(),
@@ -71,7 +81,6 @@ fun GoalsScreen(
                 Spacer(modifier = Modifier.height(32.dp))
             }
 
-            // Kalori Slider
             item {
                 NutrientSlider(
                     label = "Kalori",
@@ -80,12 +89,11 @@ fun GoalsScreen(
                     color = Color(0xFF03A9F4),
                     minValue = 500,
                     maxValue = 5000,
-                    onValueChange = { viewModel.updateKcal(it) }
+                    onValueChange = viewModel::updateKcal
                 )
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(28.dp))
             }
 
-            // Protein Slider
             item {
                 NutrientSlider(
                     label = "Protein",
@@ -94,12 +102,11 @@ fun GoalsScreen(
                     color = Color(0xFF4CAF50),
                     minValue = 0,
                     maxValue = 500,
-                    onValueChange = { viewModel.updateProtein(it) }
+                    onValueChange = viewModel::updateProtein
                 )
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(28.dp))
             }
 
-            // Karbohidrat Slider
             item {
                 NutrientSlider(
                     label = "Karbohidrat",
@@ -108,26 +115,25 @@ fun GoalsScreen(
                     color = Color(0xFFFF9800),
                     minValue = 0,
                     maxValue = 1000,
-                    onValueChange = { viewModel.updateCarbs(it) }
+                    onValueChange = viewModel::updateCarbs
                 )
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(28.dp))
             }
 
-            // Lemak Slider
             item {
                 NutrientSlider(
-                    label = "lemak",
+                    label = "Lemak",
                     value = uiState.fat,
                     unit = "g",
                     color = Color(0xFF9C27B0),
                     minValue = 0,
                     maxValue = 300,
-                    onValueChange = { viewModel.updateFat(it) }
+                    onValueChange = viewModel::updateFat
                 )
                 Spacer(modifier = Modifier.height(48.dp))
             }
 
-            // Terapkan Button
+            // Tombol Simpan
             item {
                 Button(
                     onClick = { viewModel.saveTargets() },
@@ -135,10 +141,7 @@ fun GoalsScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF03A9F4)
-                    ),
-                    shape = MaterialTheme.shapes.medium
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF03A9F4))
                 ) {
                     if (uiState.isSaving) {
                         CircularProgressIndicator(
@@ -147,13 +150,13 @@ fun GoalsScreen(
                         )
                     } else {
                         Text(
-                            text = "Terapkan",
+                            text = "Simpan Target",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }
                 }
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(30.dp))
             }
         }
     }
@@ -170,22 +173,14 @@ fun NutrientSlider(
     onValueChange: (Int) -> Unit
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = label,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Medium
-            )
-            Text(
-                text = "$value $unit",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = color
-            )
+            Text(text = label, fontSize = 18.sp, fontWeight = FontWeight.Medium)
+            Text(text = "$value $unit", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = color)
         }
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -201,24 +196,13 @@ fun NutrientSlider(
             )
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(6.dp))
 
-        // Value text field
         OutlinedTextField(
             value = value.toString(),
-            onValueChange = { newValue ->
-                newValue.toIntOrNull()?.let { onValueChange(it) }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            textStyle = LocalTextStyle.current.copy(fontSize = 16.sp),
-            trailingIcon = {
-                Text(
-                    text = unit,
-                    modifier = Modifier.padding(end = 12.dp)
-                )
-            },
+            onValueChange = { input -> input.toIntOrNull()?.let(onValueChange) },
+            modifier = Modifier.fillMaxWidth(),
+            trailingIcon = { Text(unit) },
             singleLine = true
         )
     }
