@@ -1,38 +1,41 @@
-package pam.mobile.uiusecase3fp.model
+package pam.mobile.usecase3fp.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.time.LocalDate
 
-// Model untuk tabel "Nutrisi Tabel"
+// Model untuk tabel food_items
 @Serializable
-data class NutrisiTabel(
+data class FoodItemResponse(
     val id: Int,
-    @SerialName("nama_makan") val namaMakan: String,
-    val karbohidrat: Int?,
-    val protein: Int?,
-    val lemak: Int?,
-    val gula: Int?,
-    val serat: Int?,
-    @SerialName("total-kkal") val totalKkal: Int?
+    val name: String,
+    val carbohydrates: Int? = null,
+    val protein: Int? = null,
+    val fat: Int? = null,
+    val sugar: Int? = null,
+    val fiber: Int? = null,
+    val calories: Int? = null,
+    @SerialName("created_at") val createdAt: String? = null,
+    @SerialName("updated_at") val updatedAt: String? = null
 )
 
-// Model untuk daily_intake
+// Model untuk daily_intakes
 @Serializable
-data class DailyIntake(
+data class DailyIntakeResponse(
     val id: String? = null,
-    @SerialName("makanan_id") val makananId: Int,
-    val tanggal: String, // Format: "2025-12-06"
+    @SerialName("food_id") val foodId: Int,
+    @SerialName("intake_date") val intakeDate: String,
+    val portion: Double? = 1.0,
     @SerialName("created_at") val createdAt: String? = null
 )
 
 // Model untuk daily_targets
 @Serializable
-data class DailyTargets(
+data class DailyTargetsResponse(
     val id: String? = null,
-    val kcal: Int,
+    val calories: Int,
     val protein: Int,
-    val carbs: Int,
+    val carbohydrates: Int,
     val fat: Int,
     @SerialName("updated_at") val updatedAt: String? = null
 )
@@ -45,7 +48,17 @@ data class FoodItem(
     val protein: Int,
     val carbs: Int,
     val fat: Int,
-    val date: LocalDate
+    val date: LocalDate,
+    val portion: Double = 1.0
+)
+
+// Model untuk daily targets UI
+data class DailyTargets(
+    val id: String? = null,
+    val kcal: Int = 2200,
+    val protein: Int = 150,
+    val carbs: Int = 250,
+    val fat: Int = 75
 )
 
 // Model untuk progress UI

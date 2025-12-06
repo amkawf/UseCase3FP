@@ -1,93 +1,166 @@
-package pam.mobile.uiusecase3fp.repository
+package pam.mobile.usecase3fp.repository
 
-import io.github.jan.supabase.postgrest.from
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
-import pam.mobile.uiusecase3fp.data.SupabaseClientInstance
-import pam.mobile.uiusecase3fp.model.*
+import android.util.Log
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import pam.mobile.usecase3fp.api.RetrofitClient
+import pam.mobile.usecase3fp.api.UpdateTargetsRequest
+import pam.mobile.usecase3fp.model.*
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 class SupabaseFoodRepository {
 
-    private val supabase = SupabaseClientInstance.client
+    private val apiService = RetrofitClient.apiService
+    private val TAG = "SupabaseRepo"
 
-    // Fetch foods by date dengan JOIN ke Nutrisi Tabel
-    suspend fun getFoodsByDate(date: LocalDate): List<FoodItem> {
-        val dateString = date.format(DateTimeFormatter.ISO_DATE)
+    suspend fun getFoodsByDate(date: LocalDate): List<FoodItem> = withContext(Dispatchers.IO) {
+        try {
+            val dateString = date.format(DateTimeFormatter.ISO_DATE)
+            Log.d(TAG, "========================================")
+            Log.d(TAG, "Fetching foods for date: $dateString")
 
-        // Get daily_intake for selected date
-        val dailyIntakes = supabase.from("daily_intake")
-            .select()
-            .eq("tanggal", dateString)
-            .decodeList<DailyIntake>()
+            // Ambil daily intakes untuk tanggal tertentu
+            val dailyIntakes = apiService.getDailyIntakes(intakeDate = "eq.$dateString")
+            Log.d(TAG, "Total intakes from API: ${dailyIntakes.size}")
 
-        // Get makanan details untuk setiap intake
-        val foodItems = mutableListOf<FoodItem>()
+            if (dailyIntakes.isEmpty()) {
+                Log.d(TAG, "No intakes found for $dateString")
+                return@withContext emptyList()
+            }
 
-        dailyIntakes.forEach { intake ->
-            val nutrisi = supabase.from("Nutrisi Tabel")
-                .select()
-                .eq("id", intake.makananId)
-                .decodeSingleOrNull<NutrisiTabel>()
+            // Log setiap intake
+            dailyIntakes.forEachIndexed { index, intake ->
+                Log.d(TAG, "Intake[$index]: id=${intake.id}, food_id=${intake.foodId}, date=${intake.intakeDate}, portion=${intake.portion}")
+            }
 
-            nutrisi?.let {
-                foodItems.add(
+            // Ambil semua food items
+            val allFoods = apiService.getFoodItems()
+            Log.d(TAG, "Total food items from API: ${allFoods.size}")
+
+            if (allFoods.isEmpty()) {
+                Log.e(TAG, "ERROR: food_items table is EMPTY!")
+                return@withContext emptyList()
+            }
+
+            // Log setiap food item
+            allFoods.forEachIndexed { index, food ->
+                Log.d(TAG, "Food[$index]: id=${food.id}, name=${food.name}, calories=${food.calories}")
+            }
+
+            // Gabungkan data dengan DETAILED LOG
+            Log.d(TAG, "========================================")
+            Log.d(TAG, "Starting JOIN process...")
+
+            val foodItems = dailyIntakes.mapNotNull { intake ->
+                Log.d(TAG, "Processing intake: food_id=${intake.foodId}")
+
+                val matchingFood = allFoods.find { it.id == intake.foodId }
+
+                if (matchingFood == null) {
+                    Log.e(TAG, "❌ NO MATCH FOUND for food_id=${intake.foodId}")
+                    null
+                } else {
+                    Log.d(TAG, "✅ MATCH FOUND: food_id=${intake.foodId} -> ${matchingFood.name}")
+
+                    val portion = intake.portion ?: 1.0
+                    val finalKcal = ((matchingFood.calories ?: 0) * portion).toInt()
+                    val finalProtein = ((matchingFood.protein ?: 0) * portion).toInt()
+                    val finalCarbs = ((matchingFood.carbohydrates ?: 0) * portion).toInt()
+                    val finalFat = ((matchingFood.fat ?: 0) * portion).toInt()
+
+                    Log.d(TAG, "Calculated: ${matchingFood.name} x${portion} = ${finalKcal}kcal")
+
                     FoodItem(
                         id = intake.id ?: "",
-                        name = it.namaMakan,
-                        kcal = it.totalKkal ?: 0,
-                        protein = it.protein ?: 0,
-                        carbs = it.karbohidrat ?: 0,
-                        fat = it.lemak ?: 0,
-                        date = date
+                        name = matchingFood.name,
+                        kcal = finalKcal,
+                        protein = finalProtein,
+                        carbs = finalCarbs,
+                        fat = finalFat,
+                        date = date,
+                        portion = portion
                     )
-                )
-            }
-        }
-
-        return foodItems
-    }
-
-    // Get daily targets
-    suspend fun getDailyTargets(): DailyTargets {
-        val targets = supabase.from("daily_targets")
-            .select()
-            .limit(1)
-            .decodeSingleOrNull<DailyTargets>()
-
-        // Return default jika belum ada
-        return targets ?: DailyTargets(
-            kcal = 2200,
-            protein = 150,
-            carbs = 250,
-            fat = 75
-        )
-    }
-
-    // Update daily targets
-    suspend fun updateDailyTargets(targets: DailyTargets) {
-        // Get existing target
-        val existing = supabase.from("daily_targets")
-            .select()
-            .limit(1)
-            .decodeSingleOrNull<DailyTargets>()
-
-        if (existing != null) {
-            // Update existing
-            supabase.from("daily_targets")
-                .update({
-                    DailyTargets::kcal setTo targets.kcal
-                    DailyTargets::protein setTo targets.protein
-                    DailyTargets::carbs setTo targets.carbs
-                    DailyTargets::fat setTo targets.fat
-                }) {
-                    eq("id", existing.id!!)
                 }
-        } else {
-            // Insert new
-            supabase.from("daily_targets")
-                .insert(targets)
+            }
+
+            Log.d(TAG, "========================================")
+            Log.d(TAG, "Final food items: ${foodItems.size}")
+            foodItems.forEachIndexed { index, item ->
+                Log.d(TAG, "Result[$index]: ${item.name} (${item.portion}x), ${item.kcal} kcal, P:${item.protein}g, C:${item.carbs}g, F:${item.fat}g")
+            }
+            Log.d(TAG, "========================================")
+
+            foodItems
+        } catch (e: Exception) {
+            Log.e(TAG, "========================================")
+            Log.e(TAG, "EXCEPTION in getFoodsByDate", e)
+            Log.e(TAG, "Error message: ${e.message}")
+            Log.e(TAG, "Stack trace:", e)
+            Log.e(TAG, "========================================")
+            e.printStackTrace()
+            emptyList()
+        }
+    }
+
+    suspend fun getDailyTargets(): DailyTargets = withContext(Dispatchers.IO) {
+        try {
+            Log.d(TAG, "Fetching daily targets...")
+
+            val targets = apiService.getDailyTargets()
+            Log.d(TAG, "Targets found: ${targets.size}")
+
+            val result = targets.firstOrNull()?.let {
+                DailyTargets(
+                    id = it.id,
+                    kcal = it.calories,
+                    protein = it.protein,
+                    carbs = it.carbohydrates,
+                    fat = it.fat
+                )
+            } ?: DailyTargets(
+                kcal = 2200,
+                protein = 150,
+                carbs = 250,
+                fat = 75
+            )
+
+            Log.d(TAG, "Using targets: kcal=${result.kcal}, protein=${result.protein}, carbs=${result.carbs}, fat=${result.fat}")
+
+            result
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching targets", e)
+            e.printStackTrace()
+            DailyTargets(kcal = 2200, protein = 150, carbs = 250, fat = 75)
+        }
+    }
+
+    suspend fun updateDailyTargets(targets: DailyTargets) = withContext(Dispatchers.IO) {
+        try {
+            Log.d(TAG, "Updating targets: kcal=${targets.kcal}, protein=${targets.protein}")
+
+            val existing = apiService.getDailyTargets().firstOrNull()
+
+            val requestBody = UpdateTargetsRequest(
+                calories = targets.kcal,
+                protein = targets.protein,
+                carbohydrates = targets.carbs,
+                fat = targets.fat
+            )
+
+            if (existing != null && existing.id != null) {
+                Log.d(TAG, "Updating existing target with id: ${existing.id}")
+                apiService.updateDailyTargets(id = "eq.${existing.id}", body = requestBody)
+                Log.d(TAG, "Target updated successfully")
+            } else {
+                Log.d(TAG, "Inserting new target")
+                apiService.insertDailyTargets(body = requestBody)
+                Log.d(TAG, "Target inserted successfully")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error updating targets", e)
+            e.printStackTrace()
+            throw e
         }
     }
 

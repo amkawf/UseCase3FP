@@ -1,13 +1,13 @@
-package pam.mobile.uiusecase3fp.viewmodel
+package pam.mobile.usecase3fp.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import pam.mobile.uiusecase3fp.model.DailyTargets
-import pam.mobile.uiusecase3fp.model.FoodItem
-import pam.mobile.uiusecase3fp.model.NutrientProgress
-import pam.mobile.uiusecase3fp.repository.SupabaseFoodRepository
+import pam.mobile.usecase3fp.model.DailyTargets
+import pam.mobile.usecase3fp.model.FoodItem
+import pam.mobile.usecase3fp.model.NutrientProgress
+import pam.mobile.usecase3fp.repository.SupabaseFoodRepository
 import java.time.LocalDate
 
 data class DashboardUiState(

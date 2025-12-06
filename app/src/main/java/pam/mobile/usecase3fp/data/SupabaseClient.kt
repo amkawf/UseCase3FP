@@ -1,3 +1,4 @@
+/*
 package pam.mobile.usecase3fp.data
 
 import io.github.jan.supabase.createSupabaseClient
@@ -16,4 +17,4 @@ object SupabaseClientInstance {
             install(Postgrest)
         }
     }
-}
+}*/

@@ -6,8 +6,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import pam.mobile.uiusecase3fp.model.DailyTargets
-import pam.mobile.uiusecase3fp.repository.SupabaseFoodRepository
+import pam.mobile.usecase3fp.model.DailyTargets
+import pam.mobile.usecase3fp.repository.SupabaseFoodRepository
 
 data class GoalsUiState(
     val kcal: Int = 2200,

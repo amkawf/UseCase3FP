@@ -1,4 +1,4 @@
-package pam.mobile.uiusecase3fp.ui
+package pam.mobile.usecase3fp.ui
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -17,7 +17,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import pam.mobile.usecase3fp.viewmodel.GoalsViewModel
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GoalsScreen(
@@ -31,8 +30,7 @@ fun GoalsScreen(
     LaunchedEffect(uiState.isSaved) {
         if (uiState.isSaved) {
             snackbarHostState.showSnackbar("Target berhasil disimpan")
-            viewModel.resetSavedState()
-        }
+            viewModel.resetSavedState()}
     }
 
     Scaffold(

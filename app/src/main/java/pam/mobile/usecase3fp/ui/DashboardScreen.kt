@@ -1,4 +1,4 @@
-package pam.mobile.uiusecase3fp.ui
+package pam.mobile.usecase3fp.ui
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -25,9 +25,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import pam.mobile.uiusecase3fp.model.FoodItem
-import pam.mobile.uiusecase3fp.model.NutrientProgress
-import pam.mobile.uiusecase3fp.viewmodel.DashboardViewModel
+import pam.mobile.usecase3fp.model.FoodItem
+import pam.mobile.usecase3fp.model.NutrientProgress
+import pam.mobile.usecase3fp.viewmodel.DashboardViewModel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import android.widget.Toast
