@@ -196,6 +196,26 @@ class SupabaseFoodRepository {
         }
     }
 
+    // TAMBAHAN BARU - Get images
+    suspend fun getImages(): List<ImageResponse> = withContext(Dispatchers.IO) {
+        try {
+            Log.d(TAG, "Fetching images...")
+
+            val imagesJson = apiService.getImagesRaw()
+            Log.d(TAG, "Raw images JSON: $imagesJson")
+
+            val imagesType = object : TypeToken<List<ImageResponse>>() {}.type
+            val images: List<ImageResponse> = gson.fromJson(imagesJson, imagesType)
+            Log.d(TAG, "Parsed images: ${images.size}")
+
+            images
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching images", e)
+            e.printStackTrace()
+            emptyList()
+        }
+    }
+
     companion object {
         @Volatile
         private var instance: SupabaseFoodRepository? = null

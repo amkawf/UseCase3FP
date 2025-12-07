@@ -4,39 +4,41 @@ import retrofit2.http.*
 
 interface ApiService {
 
-    // Get all food items - return raw String
+    // Existing endpoints
     @GET("food_items")
     suspend fun getFoodItemsRaw(
         @Query("select") select: String = "*"
     ): String
 
-    // Get daily intakes by date - return raw String
     @GET("daily_intakes")
     suspend fun getDailyIntakesRaw(
         @Query("intake_date") intakeDate: String? = null,
         @Query("select") select: String = "*"
     ): String
 
-    // Get daily targets - return raw String
     @GET("daily_targets")
     suspend fun getDailyTargetsRaw(
         @Query("select") select: String = "*"
     ): String
 
-    // Update daily targets - GANTI jadi Unit (no response expected)
+    // TAMBAHAN BARU - Get images
+    @GET("images")
+    suspend fun getImagesRaw(
+        @Query("select") select: String = "*"
+    ): String
+
     @Headers("Prefer: return=minimal")
     @PATCH("daily_targets")
     suspend fun updateDailyTargets(
         @Query("id") id: String,
         @Body body: UpdateTargetsRequest
-    ): Unit  // GANTI dari tanpa return type jadi Unit
+    ): Unit
 
-    // Insert daily targets - GANTI jadi Unit (no response expected)
     @Headers("Prefer: return=minimal")
     @POST("daily_targets")
     suspend fun insertDailyTargets(
         @Body body: UpdateTargetsRequest
-    ): Unit  // GANTI dari tanpa return type jadi Unit
+    ): Unit
 }
 
 // Request body untuk update targets

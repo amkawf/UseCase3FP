@@ -9,6 +9,8 @@ import pam.mobile.usecase3fp.model.FoodItem
 import pam.mobile.usecase3fp.model.NutrientProgress
 import pam.mobile.usecase3fp.repository.SupabaseFoodRepository
 import java.time.LocalDate
+import pam.mobile.usecase3fp.model.ImageResponse
+
 
 data class DashboardUiState(
     val selectedDate: LocalDate = LocalDate.now(),
@@ -23,6 +25,8 @@ data class DashboardUiState(
     val proteinProgress: NutrientProgress = NutrientProgress(0, 150, 150, 0f),
     val carbsProgress: NutrientProgress = NutrientProgress(0, 250, 250, 0f),
     val fatProgress: NutrientProgress = NutrientProgress(0, 75, 75, 0f),
+    // TAMBAHAN BARU
+    val images: List<ImageResponse> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null
 )
@@ -52,6 +56,9 @@ class DashboardViewModel(
                     // Fetch foods for selected date
                     val foods = repository.getFoodsByDate(date)
 
+                    // TAMBAHAN BARU - Fetch images
+                    val images = repository.getImages()
+
                     // Calculate totals
                     val totalKcal = foods.sumOf { it.kcal }
                     val totalProtein = foods.sumOf { it.protein }
@@ -63,6 +70,8 @@ class DashboardViewModel(
                         selectedDate = date,
                         foods = foods,
                         targets = targets,
+                        // TAMBAHAN BARU
+                        images = images,
                         kcalProgress = NutrientProgress(
                             current = totalKcal,
                             target = targets.kcal,

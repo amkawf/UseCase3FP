@@ -103,3 +103,15 @@ data class NutrientProgress(
     val remaining: Int,
     val progress: Float
 )
+
+// Model untuk tabel images
+data class ImageResponse(
+    @SerializedName("id")
+    val id: Int,
+
+    @SerializedName("title")
+    val title: String,
+
+    @SerializedName("image_url")
+    val imageUrl: String
+)

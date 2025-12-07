@@ -7,17 +7,20 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -25,7 +28,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import coil.compose.AsyncImage
 import pam.mobile.usecase3fp.model.FoodItem
+import pam.mobile.usecase3fp.model.ImageResponse
 import pam.mobile.usecase3fp.viewmodel.DashboardViewModel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -158,8 +163,6 @@ fun DashboardScreen(
                 ) {
                     Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
                         LegendItem("Kalori", Color(0xFF2196F3))
-/*                        LegendItem("Karbo", Color(0xFF00BCD4))
-                        LegendItem("Lemak", Color(0xFFF44336))*/
                     }
                 }
                 Spacer(modifier = Modifier.height(32.dp))
@@ -184,7 +187,7 @@ fun DashboardScreen(
                     target = uiState.kcalProgress.target,
                     remaining = uiState.kcalProgress.remaining,
                     unit = "kcal",
-                    progress = uiState.kcalProgress.progress,  // ← ADD THIS
+                    progress = uiState.kcalProgress.progress,
                     color = Color(0xFF03A9F4)
                 )
                 Spacer(modifier = Modifier.height(12.dp))
@@ -197,7 +200,7 @@ fun DashboardScreen(
                     target = uiState.proteinProgress.target,
                     remaining = uiState.proteinProgress.remaining,
                     unit = "g",
-                    progress = uiState.proteinProgress.progress,  // ← ADD THIS
+                    progress = uiState.proteinProgress.progress,
                     color = Color(0xFF4CAF50)
                 )
                 Spacer(modifier = Modifier.height(12.dp))
@@ -210,7 +213,7 @@ fun DashboardScreen(
                     target = uiState.carbsProgress.target,
                     remaining = uiState.carbsProgress.remaining,
                     unit = "g",
-                    progress = uiState.carbsProgress.progress,  // ← ADD THIS
+                    progress = uiState.carbsProgress.progress,
                     color = Color(0xFFFF9800)
                 )
                 Spacer(modifier = Modifier.height(12.dp))
@@ -223,7 +226,7 @@ fun DashboardScreen(
                     target = uiState.fatProgress.target,
                     remaining = uiState.fatProgress.remaining,
                     unit = "g",
-                    progress = uiState.fatProgress.progress,  // ← ADD THIS
+                    progress = uiState.fatProgress.progress,
                     color = Color(0xFF9C27B0)
                 )
                 Spacer(modifier = Modifier.height(32.dp))
@@ -239,6 +242,33 @@ fun DashboardScreen(
                 )
                 Spacer(modifier = Modifier.height(16.dp))
             }
+
+            // ========================================
+            // TAMBAHAN BARU - IMAGE GALLERY
+            // ========================================
+            if (uiState.images.isNotEmpty()) {
+                item {
+                    Text(
+                        text = "Galeri Motivasi",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+
+                items(
+                    items = uiState.images,
+                    key = { image -> image.id }
+                ) { image ->
+                    ImageCard(image = image)
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
+            }
+            // ========================================
 
             // Food List
             items(
@@ -443,6 +473,45 @@ fun NutrientCardSimple(
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 color = color
+            )
+        }
+    }
+}
+
+// ========================================
+// TAMBAHAN BARU - IMAGE CARD COMPOSABLE
+// ========================================
+@Composable
+fun ImageCard(image: ImageResponse) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            // Image
+            AsyncImage(
+                model = image.imageUrl,
+                contentDescription = image.title,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)),
+                contentScale = ContentScale.Crop
+            )
+
+            // Title
+            Text(
+                text = image.title,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.padding(16.dp)
             )
         }
     }
