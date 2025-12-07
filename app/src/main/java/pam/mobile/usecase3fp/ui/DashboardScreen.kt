@@ -26,11 +26,11 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import pam.mobile.usecase3fp.model.FoodItem
-import pam.mobile.usecase3fp.model.NutrientProgress
 import pam.mobile.usecase3fp.viewmodel.DashboardViewModel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import android.widget.Toast
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -92,7 +92,8 @@ fun DashboardScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 20.dp)
+                .padding(horizontal = 20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Title
             item {
@@ -104,7 +105,7 @@ fun DashboardScreen(
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center
                 )
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(16.dp))
             }
 
             // Date Picker
@@ -121,7 +122,9 @@ fun DashboardScreen(
                         text = if (uiState.selectedDate == LocalDate.now())
                             "Hari ini"
                         else
-                            formatter.format(uiState.selectedDate)
+                            formatter.format(uiState.selectedDate),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium
                     )
                     IconButton(onClick = { viewModel.nextDay() }) {
                         Icon(Icons.Default.ChevronRight, "Next")
@@ -130,18 +133,18 @@ fun DashboardScreen(
                 Spacer(modifier = Modifier.height(24.dp))
             }
 
-            // Circular Progress
+            // Overall Circular Progress - CENTERED
             item {
                 Box(
                     modifier = Modifier
-                        .size(200.dp)
-                        .fillMaxWidth(),
+                        .fillMaxWidth()
+                        .height(250.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    MultiSegmentCircularProgress(
-                        proteinProgress = uiState.proteinProgress.progress,
-                        carbsProgress = uiState.carbsProgress.progress,
-                        fatProgress = uiState.fatProgress.progress
+                    OverallCircularProgress(
+                        overallProgress = uiState.kcalProgress.progress,
+                        current = uiState.kcalProgress.current,
+                        target = uiState.kcalProgress.target
                     )
                 }
                 Spacer(modifier = Modifier.height(16.dp))
@@ -153,10 +156,10 @@ fun DashboardScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Center
                 ) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                        LegendItem("Protein", Color(0xFF2196F3))
-                        LegendItem("Karbo", Color(0xFF00BCD4))
-                        LegendItem("Lemak", Color(0xFFF44336))
+                    Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+                        LegendItem("Kalori", Color(0xFF2196F3))
+/*                        LegendItem("Karbo", Color(0xFF00BCD4))
+                        LegendItem("Lemak", Color(0xFFF44336))*/
                     }
                 }
                 Spacer(modifier = Modifier.height(32.dp))
@@ -167,59 +170,60 @@ fun DashboardScreen(
                 Text(
                     text = "Rekap Nutrisi Harian",
                     fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
-            // Nutrient Cards
+            // Nutrient Cards - NO GRAPHICS
             item {
-                NutrientCard(
+                NutrientCardSimple(
                     title = "Kalori",
                     current = uiState.kcalProgress.current,
                     target = uiState.kcalProgress.target,
                     remaining = uiState.kcalProgress.remaining,
                     unit = "kcal",
-                    progress = uiState.kcalProgress.progress,
+                    progress = uiState.kcalProgress.progress,  // ← ADD THIS
                     color = Color(0xFF03A9F4)
                 )
                 Spacer(modifier = Modifier.height(12.dp))
             }
 
             item {
-                NutrientCard(
+                NutrientCardSimple(
                     title = "Protein",
                     current = uiState.proteinProgress.current,
                     target = uiState.proteinProgress.target,
                     remaining = uiState.proteinProgress.remaining,
                     unit = "g",
-                    progress = uiState.proteinProgress.progress,
+                    progress = uiState.proteinProgress.progress,  // ← ADD THIS
                     color = Color(0xFF4CAF50)
                 )
                 Spacer(modifier = Modifier.height(12.dp))
             }
 
             item {
-                NutrientCard(
+                NutrientCardSimple(
                     title = "Karbohidrat",
                     current = uiState.carbsProgress.current,
                     target = uiState.carbsProgress.target,
                     remaining = uiState.carbsProgress.remaining,
                     unit = "g",
-                    progress = uiState.carbsProgress.progress,
+                    progress = uiState.carbsProgress.progress,  // ← ADD THIS
                     color = Color(0xFFFF9800)
                 )
                 Spacer(modifier = Modifier.height(12.dp))
             }
 
             item {
-                NutrientCard(
+                NutrientCardSimple(
                     title = "Lemak",
                     current = uiState.fatProgress.current,
                     target = uiState.fatProgress.target,
                     remaining = uiState.fatProgress.remaining,
                     unit = "g",
-                    progress = uiState.fatProgress.progress,
+                    progress = uiState.fatProgress.progress,  // ← ADD THIS
                     color = Color(0xFF9C27B0)
                 )
                 Spacer(modifier = Modifier.height(32.dp))
@@ -230,7 +234,8 @@ fun DashboardScreen(
                 Text(
                     text = "Asupan Nutrisi Terbaru",
                     fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(16.dp))
             }
@@ -302,60 +307,60 @@ fun FoodItemRow(
     }
 }
 
+// OVERALL CIRCULAR PROGRESS - Single Progress
 @Composable
-fun MultiSegmentCircularProgress(
-    proteinProgress: Float,
-    carbsProgress: Float,
-    fatProgress: Float
+fun OverallCircularProgress(
+    overallProgress: Float,
+    current: Int,
+    target: Int
 ) {
-    Canvas(modifier = Modifier.fillMaxSize()) {
-        val strokeWidth = 24.dp.toPx()
-        val radius = (size.minDimension - strokeWidth) / 2
-        val center = Offset(size.width / 2, size.height / 2)
+    Box(
+        modifier = Modifier.size(220.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        // Canvas for circular progress
+        Canvas(modifier = Modifier.size(220.dp)) {
+            val strokeWidth = 28.dp.toPx()
+            val radius = (size.minDimension - strokeWidth) / 2
+            val center = Offset(size.width / 2, size.height / 2)
 
-        // Background circle
-        drawCircle(
-            color = Color(0xFFE0E0E0),
-            radius = radius,
-            center = center,
-            style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
-        )
+            // Background circle
+            drawCircle(
+                color = Color(0xFFE8E8E8),
+                radius = radius,
+                center = center,
+                style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+            )
 
-        val segmentAngle = 360f / 3
-        val gapAngle = 8f
+            // Progress arc (Blue - overall)
+            drawArc(
+                color = Color(0xFF03A9F4),
+                startAngle = -90f,
+                sweepAngle = 360f * overallProgress,
+                useCenter = false,
+                topLeft = Offset(center.x - radius, center.y - radius),
+                size = Size(radius * 2, radius * 2),
+                style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+            )
+        }
 
-        // Protein segment (Blue)
-        drawArc(
-            color = Color(0xFF2196F3),
-            startAngle = -90f,
-            sweepAngle = (segmentAngle - gapAngle) * proteinProgress,
-            useCenter = false,
-            topLeft = Offset(center.x - radius, center.y - radius),
-            size = Size(radius * 2, radius * 2),
-            style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
-        )
-
-        // Carbs segment (Cyan)
-        drawArc(
-            color = Color(0xFF00BCD4),
-            startAngle = -90f + segmentAngle,
-            sweepAngle = (segmentAngle - gapAngle) * carbsProgress,
-            useCenter = false,
-            topLeft = Offset(center.x - radius, center.y - radius),
-            size = Size(radius * 2, radius * 2),
-            style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
-        )
-
-        // Fat segment (Red)
-        drawArc(
-            color = Color(0xFFF44336),
-            startAngle = -90f + segmentAngle * 2,
-            sweepAngle = (segmentAngle - gapAngle) * fatProgress,
-            useCenter = false,
-            topLeft = Offset(center.x - radius, center.y - radius),
-            size = Size(radius * 2, radius * 2),
-            style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
-        )
+        // Center Text
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "${(overallProgress * 100).roundToInt()}%",
+                fontSize = 36.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF03A9F4)
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "$current / $target kcal",
+                fontSize = 14.sp,
+                color = Color.Gray
+            )
+        }
     }
 }
 
@@ -363,19 +368,24 @@ fun MultiSegmentCircularProgress(
 fun LegendItem(label: String, color: Color) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         Box(
             modifier = Modifier
-                .size(12.dp)
+                .size(14.dp)
                 .background(color = color, shape = CircleShape)
         )
-        Text(text = label, fontSize = 12.sp)
+        Text(
+            text = label,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium
+        )
     }
 }
 
+// SIMPLE CARD
 @Composable
-fun NutrientCard(
+fun NutrientCardSimple(
     title: String,
     current: Int,
     target: Int,
@@ -384,41 +394,56 @@ fun NutrientCard(
     progress: Float,
     color: Color
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
+            // Left side - Info
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = title,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = "$current / $target $unit",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = color
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    text = "$remaining $unit remaining",
+                    fontSize = 13.sp,
+                    color = Color.Gray
+                )
+            }
+
+            // Right side - Percentage only (no graphic)
             Text(
-                text = title,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium
-            )
-            Text(
-                text = "$current / $target $unit",
-                fontSize = 16.sp,
+                text = "${(progress * 100).roundToInt()}%",
+                fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 color = color
             )
         }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        LinearProgressIndicator(
-            progress = progress,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(10.dp),
-            color = color,
-            trackColor = Color(0xFFE0E0E0)
-        )
-
-        Spacer(modifier = Modifier.height(6.dp))
-
-        Text(
-            text = "$remaining $unit remaining",
-            fontSize = 12.sp,
-            color = Color.Gray
-        )
     }
 }

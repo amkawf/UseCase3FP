@@ -1,46 +1,42 @@
 package pam.mobile.usecase3fp.api
 
-import com.google.gson.annotations.SerializedName
-import pam.mobile.usecase3fp.model.DailyIntakeResponse
-import pam.mobile.usecase3fp.model.DailyTargetsResponse
-import pam.mobile.usecase3fp.model.FoodItemResponse
 import retrofit2.http.*
 
 interface ApiService {
 
-    // Get all food items
+    // Get all food items - return raw String
     @GET("food_items")
-    suspend fun getFoodItems(
+    suspend fun getFoodItemsRaw(
         @Query("select") select: String = "*"
-    ): List<FoodItemResponse>
+    ): String
 
-    // Get daily intakes by date
+    // Get daily intakes by date - return raw String
     @GET("daily_intakes")
-    suspend fun getDailyIntakes(
+    suspend fun getDailyIntakesRaw(
         @Query("intake_date") intakeDate: String? = null,
         @Query("select") select: String = "*"
-    ): List<DailyIntakeResponse>
+    ): String
 
-    // Get daily targets
+    // Get daily targets - return raw String
     @GET("daily_targets")
-    suspend fun getDailyTargets(
+    suspend fun getDailyTargetsRaw(
         @Query("select") select: String = "*"
-    ): List<DailyTargetsResponse>
+    ): String
 
-    // Update daily targets
+    // Update daily targets - GANTI jadi Unit (no response expected)
     @Headers("Prefer: return=minimal")
     @PATCH("daily_targets")
     suspend fun updateDailyTargets(
         @Query("id") id: String,
         @Body body: UpdateTargetsRequest
-    )
+    ): Unit  // GANTI dari tanpa return type jadi Unit
 
-    // Insert daily targets
+    // Insert daily targets - GANTI jadi Unit (no response expected)
     @Headers("Prefer: return=minimal")
     @POST("daily_targets")
     suspend fun insertDailyTargets(
         @Body body: UpdateTargetsRequest
-    )
+    ): Unit  // GANTI dari tanpa return type jadi Unit
 }
 
 // Request body untuk update targets

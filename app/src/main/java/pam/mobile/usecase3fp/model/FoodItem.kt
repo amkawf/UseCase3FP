@@ -1,43 +1,78 @@
 package pam.mobile.usecase3fp.model
 
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
+import com.google.gson.annotations.SerializedName
 import java.time.LocalDate
 
 // Model untuk tabel food_items
-@Serializable
 data class FoodItemResponse(
+    @SerializedName("id")
     val id: Int,
+
+    @SerializedName("name")
     val name: String,
+
+    @SerializedName("carbohydrates")
     val carbohydrates: Int? = null,
+
+    @SerializedName("protein")
     val protein: Int? = null,
+
+    @SerializedName("fat")
     val fat: Int? = null,
+
+    @SerializedName("sugar")
     val sugar: Int? = null,
+
+    @SerializedName("fiber")
     val fiber: Int? = null,
+
+    @SerializedName("calories")
     val calories: Int? = null,
-    @SerialName("created_at") val createdAt: String? = null,
-    @SerialName("updated_at") val updatedAt: String? = null
+
+    @SerializedName("created_at")
+    val createdAt: String? = null,
+
+    @SerializedName("updated_at")
+    val updatedAt: String? = null
 )
 
 // Model untuk daily_intakes
-@Serializable
 data class DailyIntakeResponse(
+    @SerializedName("id")
     val id: String? = null,
-    @SerialName("food_id") val foodId: Int,
-    @SerialName("intake_date") val intakeDate: String,
+
+    @SerializedName("food_id")
+    val foodId: Int,
+
+    @SerializedName("intake_date")
+    val intakeDate: String,
+
+    @SerializedName("portion")
     val portion: Double? = 1.0,
-    @SerialName("created_at") val createdAt: String? = null
+
+    @SerializedName("created_at")
+    val createdAt: String? = null
 )
 
 // Model untuk daily_targets
-@Serializable
 data class DailyTargetsResponse(
+    @SerializedName("id")
     val id: String? = null,
+
+    @SerializedName("calories")
     val calories: Int,
+
+    @SerializedName("protein")
     val protein: Int,
+
+    @SerializedName("carbohydrates")
     val carbohydrates: Int,
+
+    @SerializedName("fat")
     val fat: Int,
-    @SerialName("updated_at") val updatedAt: String? = null
+
+    @SerializedName("updated_at")
+    val updatedAt: String? = null
 )
 
 // Model untuk UI (tidak perlu serializable)

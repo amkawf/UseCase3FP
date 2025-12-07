@@ -1,6 +1,8 @@
 package pam.mobile.usecase3fp.repository
 
 import android.util.Log
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import pam.mobile.usecase3fp.api.RetrofitClient
@@ -12,6 +14,7 @@ import java.time.format.DateTimeFormatter
 class SupabaseFoodRepository {
 
     private val apiService = RetrofitClient.apiService
+    private val gson = Gson()
     private val TAG = "SupabaseRepo"
 
     suspend fun getFoodsByDate(date: LocalDate): List<FoodItem> = withContext(Dispatchers.IO) {
@@ -20,46 +23,69 @@ class SupabaseFoodRepository {
             Log.d(TAG, "========================================")
             Log.d(TAG, "Fetching foods for date: $dateString")
 
-            // Ambil daily intakes untuk tanggal tertentu
-            val dailyIntakes = apiService.getDailyIntakes(intakeDate = "eq.$dateString")
-            Log.d(TAG, "Total intakes from API: ${dailyIntakes.size}")
+            // Ambil daily intakes sebagai String
+            val intakesJson = apiService.getDailyIntakesRaw(intakeDate = "eq.$dateString")
+            Log.d(TAG, "Raw intakes JSON: $intakesJson")
+
+            // Parse dengan Gson
+            val intakesType = object : TypeToken<List<DailyIntakeResponse>>() {}.type
+            val dailyIntakes: List<DailyIntakeResponse> = gson.fromJson(intakesJson, intakesType)
+            Log.d(TAG, "Parsed intakes: ${dailyIntakes.size}")
 
             if (dailyIntakes.isEmpty()) {
                 Log.d(TAG, "No intakes found for $dateString")
                 return@withContext emptyList()
             }
 
-            // Log setiap intake
+            // Log setiap intake dengan detail type
             dailyIntakes.forEachIndexed { index, intake ->
-                Log.d(TAG, "Intake[$index]: id=${intake.id}, food_id=${intake.foodId}, date=${intake.intakeDate}, portion=${intake.portion}")
+                Log.d(TAG, "Intake[$index]:")
+                Log.d(TAG, "  - id: ${intake.id} (${intake.id?.javaClass?.simpleName})")
+                Log.d(TAG, "  - food_id: ${intake.foodId} (${intake.foodId.javaClass.simpleName})")
+                Log.d(TAG, "  - intake_date: ${intake.intakeDate}")
+                Log.d(TAG, "  - portion: ${intake.portion}")
             }
 
-            // Ambil semua food items
-            val allFoods = apiService.getFoodItems()
-            Log.d(TAG, "Total food items from API: ${allFoods.size}")
+            // Ambil semua food items sebagai String
+            val foodsJson = apiService.getFoodItemsRaw()
+            Log.d(TAG, "Raw foods JSON: ${foodsJson.take(200)}...") // Log first 200 chars
+
+            // Parse dengan Gson
+            val foodsType = object : TypeToken<List<FoodItemResponse>>() {}.type
+            val allFoods: List<FoodItemResponse> = gson.fromJson(foodsJson, foodsType)
+            Log.d(TAG, "Parsed food items: ${allFoods.size}")
 
             if (allFoods.isEmpty()) {
                 Log.e(TAG, "ERROR: food_items table is EMPTY!")
                 return@withContext emptyList()
             }
 
-            // Log setiap food item
+            // Log setiap food item dengan detail type
             allFoods.forEachIndexed { index, food ->
-                Log.d(TAG, "Food[$index]: id=${food.id}, name=${food.name}, calories=${food.calories}")
+                Log.d(TAG, "Food[$index]:")
+                Log.d(TAG, "  - id: ${food.id} (${food.id.javaClass.simpleName})")
+                Log.d(TAG, "  - name: ${food.name}")
+                Log.d(TAG, "  - calories: ${food.calories}")
             }
 
             // Gabungkan data dengan DETAILED LOG
             Log.d(TAG, "========================================")
             Log.d(TAG, "Starting JOIN process...")
 
-            val foodItems = dailyIntakes.mapNotNull { intake ->
-                Log.d(TAG, "Processing intake: food_id=${intake.foodId}")
+            val foodItems = mutableListOf<FoodItem>()
 
-                val matchingFood = allFoods.find { it.id == intake.foodId }
+            dailyIntakes.forEach { intake ->
+                Log.d(TAG, "Looking for food_id: ${intake.foodId} (type: ${intake.foodId.javaClass.simpleName})")
+
+                val matchingFood = allFoods.find { food ->
+                    val match = food.id == intake.foodId
+                    Log.d(TAG, "  Comparing ${food.id} (${food.id.javaClass.simpleName}) == ${intake.foodId}? $match")
+                    match
+                }
 
                 if (matchingFood == null) {
                     Log.e(TAG, "❌ NO MATCH FOUND for food_id=${intake.foodId}")
-                    null
+                    Log.e(TAG, "Available food IDs: ${allFoods.map { it.id }}")
                 } else {
                     Log.d(TAG, "✅ MATCH FOUND: food_id=${intake.foodId} -> ${matchingFood.name}")
 
@@ -69,9 +95,9 @@ class SupabaseFoodRepository {
                     val finalCarbs = ((matchingFood.carbohydrates ?: 0) * portion).toInt()
                     val finalFat = ((matchingFood.fat ?: 0) * portion).toInt()
 
-                    Log.d(TAG, "Calculated: ${matchingFood.name} x${portion} = ${finalKcal}kcal")
+                    Log.d(TAG, "Calculated: ${matchingFood.name} x${portion} = ${finalKcal}kcal, P:${finalProtein}g, C:${finalCarbs}g, F:${finalFat}g")
 
-                    FoodItem(
+                    foodItems.add(FoodItem(
                         id = intake.id ?: "",
                         name = matchingFood.name,
                         kcal = finalKcal,
@@ -80,14 +106,14 @@ class SupabaseFoodRepository {
                         fat = finalFat,
                         date = date,
                         portion = portion
-                    )
+                    ))
                 }
             }
 
             Log.d(TAG, "========================================")
             Log.d(TAG, "Final food items: ${foodItems.size}")
             foodItems.forEachIndexed { index, item ->
-                Log.d(TAG, "Result[$index]: ${item.name} (${item.portion}x), ${item.kcal} kcal, P:${item.protein}g, C:${item.carbs}g, F:${item.fat}g")
+                Log.d(TAG, "Result[$index]: ${item.name} (${item.portion}x), ${item.kcal} kcal")
             }
             Log.d(TAG, "========================================")
 
@@ -96,9 +122,8 @@ class SupabaseFoodRepository {
             Log.e(TAG, "========================================")
             Log.e(TAG, "EXCEPTION in getFoodsByDate", e)
             Log.e(TAG, "Error message: ${e.message}")
-            Log.e(TAG, "Stack trace:", e)
-            Log.e(TAG, "========================================")
             e.printStackTrace()
+            Log.e(TAG, "========================================")
             emptyList()
         }
     }
@@ -107,8 +132,12 @@ class SupabaseFoodRepository {
         try {
             Log.d(TAG, "Fetching daily targets...")
 
-            val targets = apiService.getDailyTargets()
-            Log.d(TAG, "Targets found: ${targets.size}")
+            val targetsJson = apiService.getDailyTargetsRaw()
+            Log.d(TAG, "Raw targets JSON: $targetsJson")
+
+            val targetsType = object : TypeToken<List<DailyTargetsResponse>>() {}.type
+            val targets: List<DailyTargetsResponse> = gson.fromJson(targetsJson, targetsType)
+            Log.d(TAG, "Parsed targets: ${targets.size}")
 
             val result = targets.firstOrNull()?.let {
                 DailyTargets(
@@ -125,7 +154,7 @@ class SupabaseFoodRepository {
                 fat = 75
             )
 
-            Log.d(TAG, "Using targets: kcal=${result.kcal}, protein=${result.protein}, carbs=${result.carbs}, fat=${result.fat}")
+            Log.d(TAG, "Using targets: kcal=${result.kcal}, protein=${result.protein}")
 
             result
         } catch (e: Exception) {
@@ -139,7 +168,10 @@ class SupabaseFoodRepository {
         try {
             Log.d(TAG, "Updating targets: kcal=${targets.kcal}, protein=${targets.protein}")
 
-            val existing = apiService.getDailyTargets().firstOrNull()
+            val targetsJson = apiService.getDailyTargetsRaw()
+            val targetsType = object : TypeToken<List<DailyTargetsResponse>>() {}.type
+            val existingList: List<DailyTargetsResponse> = gson.fromJson(targetsJson, targetsType)
+            val existing = existingList.firstOrNull()
 
             val requestBody = UpdateTargetsRequest(
                 calories = targets.kcal,
